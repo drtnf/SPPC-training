@@ -1,0 +1,333 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{svg}
+\usepackage{drawstack}
+\usepackage[dvipsnames,svgnames,table,hyperref]{xcolor}
+\usetikzlibrary{arrows}
+\usepackage{listings}
+\usepackage{kbordermatrix}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\pgfdeclarelayer{background} %tiks animation stuff
+\pgfsetlayers{background,main}
+\usetheme{metropolis}           % Use metropolis theme
+\title{Graph Theory 2}
+\date{\today}
+\author{PCS}
+\institute{But wait, there's more!}
+\begin{document}
+
+\maketitle
+
+  \begin{frame}{Some Revision}
+  \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+          \begin{columns}
+    
+    \column{0.5\textwidth}
+        \renewcommand{\kbldelim}{(}% Left delimiter
+        \renewcommand{\kbrdelim}{)}% Right delimiter
+        \[
+          \kbordermatrix{
+            & a & b & c  \\
+            a & 1 & \textcolor{red}{2} & 0\\
+            b & \textcolor{red}{2} & 1 & 1 \\
+            c & 0 & 1 & 1 \\
+          }
+        \]
+    \column{0.4\textwidth}
+                \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1
+        ]
+        \node[g1v] (0) at (0,0.75) {a};
+
+        \node[g1v] (1) at (1.5,1.5) {b};
+        \node[g3v] (2) at (1.5,0) {c};
+
+        \draw[,red] (0) --  (1);
+        \draw[] (1) -- node[right] {1}  (2);
+
+    \end{tikzpicture}
+    \end{columns}
+    \vspace{1cm}
+    \centering
+        A graph is a set of vertices and edges $G(V,E)$ \\
+        It can be stored in a matrix as above or an array of lists.
+  \end{frame}
+  
+  \begin{frame}{Path}
+    \begin{itemize}
+        \item is just a sequence of vertices
+        \begin{center}
+            $(a,b,c)$
+        \end{center}
+        \item the weight of the path is the sum of the edge weights
+        \begin{center}
+            2+1=3
+        \end{center}
+        \item most of the time you will want to find the shortest path
+    \vspace{0.7cm}
+    \begin{columns}
+      \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+        \column{0.4\textwidth}
+                \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1
+        ]
+        \node[g1v] (0) at (0,0.75) {a};
+
+        \node[g1v] (1) at (1.5,1.5) {b};
+        \node[g3v] (2) at (1.5,0) {c};
+
+        \draw[] (0) -- node[above] {2} (1);
+        \draw[] (1) -- node[right] {1}  (2);
+
+    \end{tikzpicture}
+    \end{columns}
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{Variations on Shortest Path}
+  
+    \begin{columns}
+    \column{0.5\textwidth}
+        \begin{itemize}
+            \item Single Source
+            \item Single destination
+            \item all pair
+        \end{itemize}
+    \column{0.5\textwidth}
+      \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+        \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1
+        ]
+        \node[g1v] (0) at (0,0.75) {a};
+
+        \node[g1v] (1) at (1.5,1.5) {b};
+        \node[g3v] (2) at (1.5,0) {c};
+
+        \node[g2v] (3) at (3,1.5) {d};
+        \node[g3v] (4) at (3,0) {e};
+
+        \node[g1v] (5) at (4.5,1.5) {f};
+
+        \draw[->,] (0) -- node[above] {4} (1);
+        \draw[->,] (1) -- node[left] {1} (2);
+        \draw[->,] (1) -- node[above] {1} (3);
+        \draw[<-,] (1) -- node[above] {2} (4);
+        \draw[->,] (2) -- node[below] {1} (0);
+        \draw[<-.] (2) -- node[below] {4} (4);
+        \draw[->,] (3) -- node[above] {3} (5);
+    \end{tikzpicture}
+    \end{columns}
+      
+  \end{frame}
+  
+  \begin{frame}{What makes or breaks most algorithms}
+      \begin{itemize}
+          \item An optimal sub-structure
+          \item A shortest path between two (distant) vertices will contain the shortest path for every other vertex in the path 
+          \item 'longer' shortest paths are build up of smaller one
+      \end{itemize}
+      (hint: relaxation)
+  \end{frame}
+      
+  
+\begin{frame}{Dijkstra's Algorithm}
+    \begin{itemize}
+        \item start at some node and look at adjacent ones
+        \item choose the one with the lowest weight and explore it
+        \item for all paths coming off this new node keep in mind the distance will be that nodes wight plus the one that came before
+        \item continue to greedily select nodes until all nodes have been seen
+    \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+    \frametitle{Code for Dijkstra's}
+             \begin{lstlisting}[language=Python]
+def dijkstra(adj, src):
+    pq = []
+    rv = [sys.maxsize for _ in range(len(adj))]
+    rv[src] = 0
+    heapq.heappush(pq,(0, src))
+    while(len(pq) > 0):
+    	_, u = heapq.heappop(pq)
+    	for v, w in adj[u]:
+    		if(rv[v] > rv[u] + w):
+    		rv[v] = rv[u] + w
+    		heapq.heappush(pq, (-rv[v], v))
+    return rv
+  \end{lstlisting}
+    \end{frame}
+  
+ \begin{frame}{Topological sort}
+     Topological sorting of vertices of a Directed Acyclic Graph is an ordering of the vertices $v_1 \dots v_n$in such a way, that if there is an edge directed towards vertex $v_i$ from vertex $v_j$, then $v_j$ comes before $v_i$ . For example consider the graph given below:
+     
+     \vspace{0.5cm}
+           \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+        \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1
+        ]
+        \node[g1v] (0) at (0,0.75) {a};
+
+        \node[g1v] (1) at (1.5,1.5) {b};
+        \node[g3v] (2) at (1.5,0) {c};
+
+        \node[g2v] (3) at (3,1.5) {d};
+        \node[g3v] (4) at (3,0) {e};
+
+        \node[g1v] (5) at (4.5,1.5) {f};
+
+        \draw[->,] (0) -- node[above] {4} (1);
+        \draw[->,] (1) -- node[left] {1} (2);
+        \draw[->,] (1) -- node[above] {1} (3);
+        \draw[<-,] (1) -- node[above] {2} (4);
+        \draw[->,] (2) -- node[below] {1} (0);
+        \draw[<-.] (2) -- node[below] {4} (4);
+        \draw[->,] (3) -- node[above] {3} (5);
+    \end{tikzpicture}
+ \end{frame} 
+ 
+ 
+
+ \begin{frame}{Connectivity}
+     \textbf{Connectivity} in an undirected graph means that every vertex can reach every other vertex via any path. If the graph is not connected the graph can be broken down into \textbf{Connected Components}.
+ \end{frame}
+ 
+ \begin{frame}{Connected Components}
+      \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+         \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1.6
+        ]
+        \node[g1v] (0) at (0,0) {0};
+        \node[g1v] (1) at (0,1.5) {1};
+        \node[g1v] (2) at (1.5,1.5) {2};
+        \node[g3v] (3) at (1.5,0) {3};
+        \node[g2v] (4) at (3,1.5) {4};
+        \node[g3v] (5) at (3,0) {5};
+        \node[g1v] (6) at (4.5,1.5) {6};
+        \node[g1v] (7) at (4.5,0) {7};
+        \node[g1v] (8) at (6,1.5) {8};
+        \node[g1v] (9) at (6,0) {9};
+        \draw[->,] (0) --  (1);
+        \draw[->,] (1) --  (2);
+        \draw[->,] (0) -- (2);
+        \draw[->,] (2) -- (3);
+        \draw[->,] (2) -- (5);
+        \draw[->,] (3) -- (5);
+        \draw[->,] (5) -- (7);
+        \draw[->,] (4) -- (5);
+        \draw[->,] (4) -- (6);
+        \draw[->,] (6) -- (7);
+        \draw[->,] (8) -- (9);
+        \draw[->,] (6) -- (8);
+    \end{tikzpicture}
+ \end{frame}
+ 
+ \begin{frame}{Strong Connectivity}
+     \textbf{Strong Connectivity} applies only to directed graphs. A directed graph is strongly connected if there is a directed path from any vertex to every other vertex. The only difference here as opposed to undirected is there should be directed paths instead of just paths. Similar to connected components, a directed graph can be broken down into \textbf{Strongly Connected Components}.
+ \end{frame}
+ \begin{frame}{Strongly Connected Components}
+ \tikzset{vertex/.style={draw=red!40!white, black=red, fill=red!10!white, shape=circle, inner sep=0.5pt, minimum size=16pt}}
+         \begin{tikzpicture}[
+            g1v/.style={vertex,draw=red!40!white, black=red, fill=white!10!white},
+            g2v/.style={vertex,draw=blue!40!white, black=blue, fill=white!10!white},
+            g3v/.style={vertex,draw=green!40!white, black=green, fill=white!10!white},
+            scale=1.6
+        ]
+        \node[g1v] (0) at (0,0) {0};
+        \node[g1v] (1) at (0,1.5) {1};
+        \node[g1v] (2) at (1.5,1.5) {2};
+        \node[g3v] (3) at (1.5,0) {3};
+        \node[g2v] (4) at (3,1.5) {4};
+        \node[g3v] (5) at (3,0) {5};
+        \node[g1v] (6) at (4.5,1.5) {6};
+        \node[g1v] (7) at (4.5,0) {7};
+        \node[g1v] (8) at (6,1.5) {8};
+        \node[g1v] (9) at (6,0) {9};
+        \draw[->,] (0) --  (1);
+        \draw[->,] (1) --  (2);
+        \draw[->,] (0) -- (2);
+        \draw[->,] (2) -- (3);
+        \draw[->,] (2) -- (5);
+        \draw[->,] (3) -- (5);
+        \draw[->,] (5) -- (7);
+        \draw[->,] (4) -- (5);
+        \draw[->,] (4) -- (6);
+        \draw[->,] (6) -- (7);
+        \draw[->,] (8) -- (9);
+        \draw[->,] (6) -- (8);
+    \end{tikzpicture}
+ \end{frame}
+ 
+ \begin{frame}{Kosaraju's Algorithm}
+     \begin{itemize}
+         \item DFS the graph recording finish time
+         \item reverse all the edges
+         \item DFS again but in order of finish time 
+     \end{itemize}
+ \end{frame}
+ 
+ \begin{frame}{Bellman Ford Algorithm}
+    \begin{itemize}
+        \item Does the same thing as Dijkstra's solves single source shortest path
+        \item Deals with negative edge weights (but not negative cycles)
+        \item Intuition: Relax all edges for all vertices
+        \item done in $O(VE)$
+    \end{itemize}
+ \end{frame}
+ 
+ \begin{frame}{Bellman Ford}
+     Relax all edges for all vertices
+     (yes that is really all it does)
+ \end{frame}
+ \begin{frame}{Relaxation}
+ \begin{itemize}
+     \item Is relaxation like isolation / quarantine? (not really)
+     \item For each vertex maintain v.d - an upper bound on the weight of the shortest path to that vertex
+     \item Initially set to infinity 
+     \item Refine as we discover new information (go through the graph)
+ \end{itemize}
+ \end{frame}
+ 
+ \begin{frame}{Some Python for relaxation}
+ 
+ \end{frame}
+ 
+%  \begin{frame}{bellman Ford}
+%     \begin{verbatim}
+%       	def BellmanFord(G, s):
+%   		initializeSSSP(G, s)
+%   		for i in range(G.v): # Because the longest possible shortest path is |V|-1 long 
+%   			for u in range(G.v):
+%   				for v in range(G.v):
+%   					relax(G, u, v)
+%   		for u in G.v:
+%   			for v in G.v:
+%   				if G[v].d > G[u].d + G[u][v]:
+%   					return False # Negative weight cycle found
+%   		return True
+%   	\end{verbatim}
+%  \end{frame}
+ 
+\begin{frame}{Floyd Warshall Algorithm}
+    \begin{itemize}
+        \item solves the all pairs shortest path problem
+        \item does so in $O(V^3)$ time
+        \item may or may not be a DP
+    \end{itemize}
+\end{frame}
+\end{document}
+
